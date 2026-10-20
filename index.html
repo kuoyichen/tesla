@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>特斯拉飛天車賽車 | Tesla Sky-Run</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -104,6 +104,44 @@
         .flight-active-badge {
             animation: pulse-fast 0.8s infinite ease-in-out;
         }
+
+        /* Compact edge controls keep the road and car visible. */
+        body { height: 100dvh; }
+        #game-wrapper { min-height: 0; }
+        #modal-overlay {
+            padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            overflow-y: auto;
+        }
+        #modal-card { max-height: 100%; overflow-y: auto; }
+        #modal-subtitle:empty { display: none; }
+        #btn-start-game { min-height: 48px; }
+        #driving-controls {
+            bottom: max(12px, env(safe-area-inset-bottom));
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+        }
+        #driving-controls > div { max-width: none; margin: 0; }
+        #driving-controls > div > div:last-child { flex-direction: column; gap: 10px; }
+        #driving-controls button {
+            width: 64px; height: 64px; min-width: 44px; min-height: 44px;
+            border-radius: 16px; flex-direction: column; gap: 2px;
+            letter-spacing: 0; touch-action: none;
+        }
+        #driving-controls button i { font-size: 20px; order: 0; }
+        #driving-controls button span { font-size: 11px; order: 0; }
+        @media (orientation: landscape) and (max-height: 500px) {
+            #modal-card { padding: 14px 20px; }
+            #modal-card > .inline-flex { width: 40px; height: 40px; margin-bottom: 6px; }
+            #modal-card > .inline-flex i { font-size: 22px; }
+            #modal-title { font-size: 22px; margin-bottom: 10px; }
+            #modal-subtitle { margin-bottom: 10px; font-size: 12px; }
+            #gameover-stats { margin-bottom: 10px; padding: 8px; }
+            #btn-start-game { padding-top: 10px; padding-bottom: 10px; font-size: 16px; }
+            #driving-controls button { width: 52px; height: 52px; border-radius: 13px; }
+            #driving-controls button i { font-size: 18px; }
+            #driving-controls button span { font-size: 10px; }
+            #driving-controls > div > div:last-child { gap: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -185,7 +223,7 @@
 
         <!-- Start / Game Over Modal Overlay -->
         <div id="modal-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div class="hud-glass max-w-md w-full rounded-2xl p-6 sm:p-8 text-center border-2 border-cyan-500/50 shadow-2xl relative overflow-hidden">
+            <div id="modal-card" class="hud-glass max-w-md w-full rounded-2xl p-6 sm:p-8 text-center border-2 border-cyan-500/50 shadow-2xl relative overflow-hidden">
                 <!-- Decorative Top Glow -->
                 <div class="absolute -top-16 -left-16 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
                 <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -198,9 +236,7 @@
                 <h1 id="modal-title" class="text-2xl sm:text-3xl font-black font-cyber tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-pink-400 mb-2">
                     TESLA SKY-RUN
                 </h1>
-                <p id="modal-subtitle" class="text-sm text-gray-300 mb-5">
-                    駕駛配備 <span class="text-cyan-400 font-semibold">SpaceX 冷氣推進器</span> 的特斯拉飛天車！切換車道收集金幣，遇到塞車時噴射升空飛越車陣！
-                </p>
+                <p id="modal-subtitle" class="text-sm text-gray-300 mb-5"></p>
 
                 <!-- Stats Box (Shown on Game Over) -->
                 <div id="gameover-stats" class="hidden grid-cols-3 gap-2 mb-6 bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
@@ -218,26 +254,6 @@
                     </div>
                 </div>
 
-                <!-- Controls Guide -->
-                <div class="text-left bg-slate-900/75 rounded-xl p-3.5 mb-6 text-xs text-gray-300 space-y-2 border border-slate-800">
-                    <div class="flex items-center justify-between">
-                        <span class="text-cyan-400 font-semibold"><i class="fa-solid fa-arrows-left-right mr-1.5"></i>切換車道：</span>
-                        <span>鍵盤 <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">→</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">A</kbd> <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">D</kbd> 或下方按鈕</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-pink-400 font-semibold"><i class="fa-solid fa-jet-fighter-up mr-1.5"></i>噴射飛天：</span>
-                        <span>鍵盤 <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">空白鍵</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">↑</kbd> 或噴射鈕</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-yellow-400 font-semibold"><i class="fa-solid fa-bolt mr-1.5"></i>空中與能量：</span>
-                        <span>飛天可無視地面車輛，收集藍電瓶瞬間補滿燃料</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-amber-300 font-semibold"><i class="fa-solid fa-cube mr-1.5"></i>生命與金色方塊：</span>
-                        <span>開局 5 條命，擦撞原地打轉且分數歸零，吃金色方塊 +1 命</span>
-                    </div>
-                </div>
-
                 <button id="btn-start-game" class="w-full py-3.5 rounded-xl font-bold text-base sm:text-lg tracking-wider text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-pink-600 hover:from-cyan-400 hover:to-pink-500 shadow-lg shadow-cyan-500/30 transition transform active:scale-95 cursor-pointer">
                     <i class="fa-solid fa-play mr-2"></i>啟動引擎出發
                 </button>
@@ -245,7 +261,7 @@
         </div>
 
         <!-- Floating Controls (Left Side: Left Lane Button, Right Side: Fly Thruster & Right Lane Buttons) -->
-        <div class="absolute bottom-10 sm:bottom-14 left-0 right-0 px-4 sm:px-10 z-10 pointer-events-none">
+        <div id="driving-controls" class="absolute bottom-10 sm:bottom-14 left-0 right-0 px-4 sm:px-10 z-10 pointer-events-none">
             <div class="max-w-5xl mx-auto flex items-end justify-between">
                 <!-- Left Side: 1 Button (Left Lane) -->
                 <div class="pointer-events-auto">
