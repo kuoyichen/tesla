@@ -2,643 +2,1875 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>特斯拉飛天車 (Tesla Flying Car)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>特斯拉飛天車賽車 | Tesla Sky-Run</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Inter', sans-serif; touch-action: none; }
-        #game-canvas { width: 100vw; height: 100vh; display: block; }
-        
-        /* 遊戲介面 UI */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .hud-box { background: rgba(255, 255, 255, 0.8); border-radius: 12px; padding: 10px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; pointer-events: auto;}
-        
-        /* 能量條 */
-        #battery-container { width: 200px; height: 20px; background: #374151; border-radius: 10px; overflow: hidden; border: 2px solid #1f2937; margin-top: 5px; }
-        #battery-bar { width: 100%; height: 100%; background: #10b981; transition: width 0.1s linear; }
-
-        /* 開始與結束畫面 */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 50; }
-        .overlay button { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 9999px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5); transition: transform 0.2s, box-shadow 0.2s; }
-        .overlay button:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.7); }
-        .overlay button:active { transform: scale(0.95); }
-
-        /* 手機虛擬操作按鈕 */
-        #mobile-controls { position: absolute; bottom: 30px; left: 0; width: 100%; padding: 0 20px; box-sizing: border-box; display: flex; justify-content: space-between; pointer-events: none; z-index: 40; }
-        .control-group { display: flex; gap: 15px; pointer-events: auto; }
-        .btn-control { width: 65px; height: 65px; border-radius: 50%; background: rgba(255, 255, 255, 0.6); border: 2px solid rgba(255, 255, 255, 0.9); display: flex; justify-content: center; align-items: center; font-size: 24px; color: #333; user-select: none; touch-action: none; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: background 0.1s, transform 0.1s; }
-        .btn-control:active { background: rgba(255, 255, 255, 0.9); transform: scale(0.95); }
-        .btn-fly { width: 80px; height: 80px; background: rgba(59, 130, 246, 0.7); color: white; border-color: rgba(59, 130, 246, 0.9); font-size: 32px; margin-top: -15px;}
-        .btn-fly:active { background: rgba(59, 130, 246, 1); }
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #06060e;
+            color: #ffffff;
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .font-cyber {
+            font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+        }
+        #game-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 65%, #e0f2fe 100%);
+        }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        /* Neon Button Styles */
+        .game-btn {
+            background: linear-gradient(145deg, rgba(26, 31, 53, 0.9), rgba(14, 17, 29, 0.92));
+            backdrop-filter: blur(8px);
+            border: 2px solid #00f3ff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(0, 243, 255, 0.35), inset 0 0 8px rgba(0, 243, 255, 0.15);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        .game-btn:hover {
+            box-shadow: 0 0 22px rgba(0, 243, 255, 0.65), inset 0 0 12px rgba(0, 243, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .game-btn:active, .game-btn.active-press {
+            transform: scale(0.94);
+            background: #00f3ff;
+            color: #05050a;
+            box-shadow: 0 0 25px #00f3ff;
+        }
+        .fly-btn {
+            background: linear-gradient(145deg, rgba(59, 13, 30, 0.9), rgba(26, 6, 13, 0.92));
+            backdrop-filter: blur(8px);
+            border: 2px solid #ff0055;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 18px rgba(255, 0, 85, 0.5), inset 0 0 10px rgba(255, 0, 85, 0.2);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+        }
+        .fly-btn:hover {
+            box-shadow: 0 0 26px rgba(255, 0, 85, 0.8), inset 0 0 14px rgba(255, 0, 85, 0.35);
+            transform: translateY(-1px);
+        }
+        .fly-btn:active, .fly-btn.active-press {
+            transform: scale(0.92);
+            background: #ff0055;
+            color: #ffffff;
+            box-shadow: 0 0 32px #ff0055;
+        }
+        .fly-btn:disabled {
+            opacity: 0.4;
+            filter: grayscale(80%);
+            pointer-events: none;
+        }
+        /* Glass HUD Panel */
+        .hud-glass {
+            background: rgba(12, 15, 28, 0.78);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 243, 255, 0.28);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+        }
+        /* Energy Progress Bar Glow */
+        .energy-bar-glow {
+            box-shadow: 0 0 12px #00f3ff;
+            transition: width 0.08s linear;
+        }
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.65; transform: scale(1.04); }
+        }
+        .flight-active-badge {
+            animation: pulse-fast 0.8s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 3D 遊戲畫布 -->
-    <canvas id="game-canvas"></canvas>
+    <div id="game-wrapper">
+        <!-- Top HUD Bar -->
+        <div class="absolute top-0 left-0 right-0 p-3 sm:p-5 flex flex-wrap justify-between items-center gap-2 z-10 pointer-events-none">
+            <!-- Brand & Score -->
+            <div class="flex items-center space-x-2 sm:space-x-3 pointer-events-auto">
+                <div class="hud-glass px-3.5 py-2 rounded-xl flex items-center space-x-2.5 border-l-4 border-l-red-500">
+                    <i class="fa-solid fa-bolt text-red-500 text-lg sm:text-xl"></i>
+                    <div>
+                        <div class="text-[10px] text-gray-400 tracking-widest uppercase">距離積分 SCORE</div>
+                        <div id="hud-score" class="text-base sm:text-xl font-bold font-cyber text-white">00000</div>
+                    </div>
+                </div>
 
-    <!-- 遊戲進行中的 HUD -->
-    <div id="ui-layer" class="p-6 flex justify-between items-start hidden">
-        <div class="hud-box">
-            <div class="text-gray-800 font-bold text-xl uppercase tracking-wider">Score</div>
-            <div id="score-display" class="text-4xl font-extrabold text-blue-600">0</div>
-        </div>
-        <div class="hud-box flex flex-col items-end">
-            <div class="text-gray-800 font-bold text-lg uppercase tracking-wider">Flight Energy</div>
-            <div id="battery-container">
-                <div id="battery-bar"></div>
-            </div>
-            <div id="status-text" class="text-sm font-bold text-gray-500 mt-1">Grounded</div>
-        </div>
-        
-        <!-- 手機操作按鈕 (左側方向、右側起飛) -->
-        <div id="mobile-controls">
-            <div class="control-group">
-                <div id="btn-left" class="btn-control">◀</div>
-                <div id="btn-right" class="btn-control">▶</div>
-            </div>
-            <div class="control-group">
-                <div id="btn-fly" class="btn-control btn-fly">✈️</div>
-            </div>
-        </div>
-    </div>
+                <div class="hud-glass px-3.5 py-2 rounded-xl flex items-center space-x-2.5 border-l-4 border-l-yellow-400">
+                    <i class="fa-solid fa-coins text-yellow-400 text-lg sm:text-xl"></i>
+                    <div>
+                        <div class="text-[10px] text-gray-400 tracking-widest uppercase">特斯拉幣 COINS</div>
+                        <div id="hud-coins" class="text-base sm:text-xl font-bold font-cyber text-yellow-300">0</div>
+                    </div>
+                </div>
 
-    <!-- Start Screen -->
-    <div id="start-screen" class="overlay">
-        <h1 class="text-6xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
-            特斯拉飛天車<br><span class="text-3xl text-blue-300">特仕版白晝狂飆</span>
-        </h1>
-        <div class="bg-white/90 p-6 rounded-xl mb-8 text-gray-800 font-semibold shadow-xl text-center max-w-md">
-            <p class="mb-2">🚗 <span class="text-blue-600">左右方向鍵</span>：切換四個車道</p>
-            <p class="mb-2">✈️ <span class="text-blue-600">按住空白鍵</span>：啟動飛行器 (消耗能量)</p>
-            <p class="mb-2">🪙 收集黃色<span class="text-yellow-500 font-bold">金幣</span>加分</p>
-            <p class="mb-2">🔋 收集綠色<span class="text-green-600 font-bold">電池</span>補充飛行能量</p>
-            <p class="mt-4 text-sm text-gray-500">注意：撞到車子會原地打轉，請善用飛行閃避！</p>
+                <!-- Lives Display -->
+                <div class="hud-glass px-3.5 py-2 rounded-xl flex items-center space-x-2.5 border-l-4 border-l-pink-500">
+                    <i class="fa-solid fa-heart-pulse text-pink-500 text-lg sm:text-xl animate-pulse"></i>
+                    <div>
+                        <div class="text-[10px] text-gray-400 tracking-widest uppercase">生命 LIVES</div>
+                        <div id="hud-lives" class="text-base sm:text-xl font-bold font-cyber text-pink-400">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flight Thruster Energy Gauge -->
+            <div class="hud-glass px-4 py-2 rounded-xl w-44 sm:w-64 pointer-events-auto">
+                <div class="flex justify-between items-center text-xs mb-1">
+                    <span class="text-cyan-400 font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-shuttle-space"></i> SpaceX 噴射燃料
+                    </span>
+                    <span id="hud-energy-pct" class="font-cyber text-white text-xs">100%</span>
+                </div>
+                <div class="w-full bg-gray-900 rounded-full h-3 p-0.5 overflow-hidden border border-cyan-900">
+                    <div id="hud-energy-bar" class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 h-full rounded-full energy-bar-glow" style="width: 100%"></div>
+                </div>
+                <div id="flight-status-tag" class="text-[10px] text-center mt-0.5 text-cyan-300 font-semibold tracking-wider">
+                    狀態：地面行駛 (可隨時起飛)
+                </div>
+            </div>
+
+            <!-- Speedometer & Audio Toggle -->
+            <div class="flex items-center space-x-2 pointer-events-auto">
+                <div class="hud-glass px-3.5 py-2 rounded-xl hidden md:flex items-center space-x-2 border-r-4 border-r-cyan-400">
+                    <i class="fa-solid fa-gauge-high text-cyan-400 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase">時速 SPEED</div>
+                        <div class="text-base font-bold font-cyber text-cyan-300"><span id="hud-speed">120</span> <span class="text-xs">KM/H</span></div>
+                    </div>
+                </div>
+
+                <button id="btn-sound" class="hud-glass w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-cyan-400 hover:text-white hover:border-cyan-300 transition cursor-pointer" title="切換音效">
+                    <i id="icon-sound" class="fa-solid fa-volume-high text-lg"></i>
+                </button>
+                <button id="btn-reset-cam" class="hud-glass px-3 h-10 sm:h-11 rounded-xl flex items-center justify-center text-xs text-gray-300 hover:text-white transition gap-1 cursor-pointer" title="拖曳畫面可調整視角">
+                    <i class="fa-solid fa-video text-cyan-400"></i>
+                    <span class="hidden sm:inline">重置視角</span>
+                </button>
+            </div>
         </div>
-        <button id="start-btn">啟動引擎</button>
+
+        <!-- Floating Notification Toast (Airborne / Supercharger) -->
+        <div id="floating-toast" class="absolute top-24 left-1/2 transform -translate-x-1/2 z-10 pointer-events-none opacity-0 transition-opacity duration-300">
+            <div class="px-5 py-1.5 rounded-full bg-gradient-to-r from-pink-600/90 to-purple-700/90 border border-pink-400 text-white font-bold text-sm tracking-widest shadow-lg flex items-center space-x-2 flight-active-badge">
+                <i class="fa-solid fa-fire-flame-curved text-yellow-300"></i>
+                <span id="floating-toast-text">SPACEX 推進器啟動：高空巡航中！</span>
+            </div>
+        </div>
+
+        <!-- Start / Game Over Modal Overlay -->
+        <div id="modal-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <div class="hud-glass max-w-md w-full rounded-2xl p-6 sm:p-8 text-center border-2 border-cyan-500/50 shadow-2xl relative overflow-hidden">
+                <!-- Decorative Top Glow -->
+                <div class="absolute -top-16 -left-16 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-pink-600 text-white shadow-lg mb-4 border border-red-400">
+                    <i id="modal-icon" class="fa-solid fa-car-burst text-3xl hidden"></i>
+                    <i id="modal-start-icon" class="fa-solid fa-shuttle-space text-3xl"></i>
+                </div>
+
+                <h1 id="modal-title" class="text-2xl sm:text-3xl font-black font-cyber tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-pink-400 mb-2">
+                    TESLA SKY-RUN
+                </h1>
+                <p id="modal-subtitle" class="text-sm text-gray-300 mb-5">
+                    駕駛配備 <span class="text-cyan-400 font-semibold">SpaceX 冷氣推進器</span> 的特斯拉飛天車！切換車道收集金幣，遇到塞車時噴射升空飛越車陣！
+                </p>
+
+                <!-- Stats Box (Shown on Game Over) -->
+                <div id="gameover-stats" class="hidden grid-cols-3 gap-2 mb-6 bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+                    <div>
+                        <div class="text-[11px] text-gray-400">本次得分</div>
+                        <div id="stat-score" class="text-lg font-bold font-cyber text-white">0</div>
+                    </div>
+                    <div class="border-x border-slate-700">
+                        <div class="text-[11px] text-gray-400">收集金幣</div>
+                        <div id="stat-coins" class="text-lg font-bold font-cyber text-yellow-400">0</div>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-gray-400">最佳紀錄</div>
+                        <div id="stat-best" class="text-lg font-bold font-cyber text-cyan-400">0</div>
+                    </div>
+                </div>
+
+                <!-- Controls Guide -->
+                <div class="text-left bg-slate-900/75 rounded-xl p-3.5 mb-6 text-xs text-gray-300 space-y-2 border border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-cyan-400 font-semibold"><i class="fa-solid fa-arrows-left-right mr-1.5"></i>切換車道：</span>
+                        <span>鍵盤 <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">←</kbd> <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">→</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">A</kbd> <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">D</kbd> 或下方按鈕</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-pink-400 font-semibold"><i class="fa-solid fa-jet-fighter-up mr-1.5"></i>噴射飛天：</span>
+                        <span>鍵盤 <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">空白鍵</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-700 rounded text-white">↑</kbd> 或噴射鈕</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-yellow-400 font-semibold"><i class="fa-solid fa-bolt mr-1.5"></i>空中與能量：</span>
+                        <span>飛天可無視地面車輛，收集藍電瓶瞬間補滿燃料</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-amber-300 font-semibold"><i class="fa-solid fa-cube mr-1.5"></i>生命與金色方塊：</span>
+                        <span>開局 5 條命，擦撞原地打轉且分數歸零，吃金色方塊 +1 命</span>
+                    </div>
+                </div>
+
+                <button id="btn-start-game" class="w-full py-3.5 rounded-xl font-bold text-base sm:text-lg tracking-wider text-white bg-gradient-to-r from-cyan-500 via-blue-600 to-pink-600 hover:from-cyan-400 hover:to-pink-500 shadow-lg shadow-cyan-500/30 transition transform active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-play mr-2"></i>啟動引擎出發
+                </button>
+            </div>
+        </div>
+
+        <!-- Floating Controls (Left Side: Left Lane Button, Right Side: Fly Thruster & Right Lane Buttons) -->
+        <div class="absolute bottom-10 sm:bottom-14 left-0 right-0 px-4 sm:px-10 z-10 pointer-events-none">
+            <div class="max-w-5xl mx-auto flex items-end justify-between">
+                <!-- Left Side: 1 Button (Left Lane) -->
+                <div class="pointer-events-auto">
+                    <button id="ctrl-left" class="game-btn w-24 h-24 sm:w-36 sm:h-20 rounded-full sm:rounded-2xl text-cyan-300 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 cursor-pointer select-none">
+                        <i class="fa-solid fa-chevron-left text-2xl sm:text-2xl"></i>
+                        <span class="text-xs sm:text-base">左切</span>
+                    </button>
+                </div>
+
+                <!-- Right Side: 2 Buttons (SpaceX Fly Thruster & Right Lane) -->
+                <div class="flex items-center gap-3.5 sm:gap-5 pointer-events-auto">
+                    <button id="ctrl-fly" class="fly-btn w-24 h-24 sm:w-44 sm:h-20 rounded-full sm:rounded-2xl text-white font-black flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2.5 tracking-wider cursor-pointer select-none">
+                        <i class="fa-solid fa-rocket text-yellow-300 text-2xl sm:text-2xl animate-bounce"></i>
+                        <span id="ctrl-fly-label" class="text-xs sm:text-base leading-tight text-center">噴射飛天</span>
+                    </button>
+
+                    <button id="ctrl-right" class="game-btn w-20 h-20 sm:w-32 sm:h-20 rounded-full sm:rounded-2xl text-cyan-300 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 cursor-pointer select-none">
+                        <i class="fa-solid fa-chevron-right text-2xl sm:text-2xl sm:order-2"></i>
+                        <span class="text-xs sm:text-base sm:order-1">右切</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // === 遊戲全域變數 ===
-        let scene, camera, renderer;
-        let playerCar;
-        let gameActive = false;
-        let score = 0;
-        let batteryLevel = 100;
-        const maxBattery = 100;
-        
-        // 音樂與音效
-        let bgm, flySynth, coinSynth, crashSynth, batterySynth;
-        let audioInitialized = false;
-
-        // 車道設定 (4個車道)
-        const LANES = [-4.5, -1.5, 1.5, 4.5];
-        let currentLane = 1;
-        let targetX = LANES[currentLane];
-
-        // 飛行物理與控制
-        let isFlying = false;
-        let velocityY = 0;
-        let gravity = -0.015;
-        let thrust = 0.03;
-        let groundLevel = 0;
-
-        // 撞車打轉機制
-        let isSpinning = false;
-        let spinAngle = 0;
-        let invincibleTime = 0;
-
-        // 物件陣列
-        const obstacles = [];
-        const items = [];
-        const roadLines = [];
-        const trees = [];
-        let speed = 0.8;
-
-        // UI 元素
-        const scoreDisplay = document.getElementById('score-display');
-        const batteryBar = document.getElementById('battery-bar');
-        const statusText = document.getElementById('status-text');
-        const uiLayer = document.getElementById('ui-layer');
-        const startScreen = document.getElementById('start-screen');
-
-        // === 遊戲初始化 ===
-        function init() {
-            initThreeJS();
-            createEnvironment();
-            createPlayerCar();
-            
-            // 綁定按鈕與鍵盤事件
-            document.getElementById('start-btn').addEventListener('click', startGame);
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-            window.addEventListener('resize', onWindowResize);
-
-            // 綁定手機虛擬按鈕事件
-            setupMobileControls();
-
-            // 開始渲染迴圈 (此時遊戲未開始，只渲染靜態畫面)
-            requestAnimationFrame(gameLoop);
-        }
-
-        // === 設定手機觸控按鈕 ===
-        function setupMobileControls() {
-            const btnLeft = document.getElementById('btn-left');
-            const btnRight = document.getElementById('btn-right');
-            const btnFly = document.getElementById('btn-fly');
-
-            // 封裝支援觸控與滑鼠點擊的事件
-            const bindBtn = (el, onDown, onUp) => {
-                el.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(); }, { passive: false });
-                el.addEventListener('mousedown', (e) => { e.preventDefault(); onDown(); });
-                if (onUp) {
-                    el.addEventListener('touchend', (e) => { e.preventDefault(); onUp(); }, { passive: false });
-                    el.addEventListener('mouseup', (e) => { e.preventDefault(); onUp(); });
-                    el.addEventListener('mouseleave', (e) => { e.preventDefault(); onUp(); });
-                }
-            };
-
-            bindBtn(btnLeft, () => {
-                if (!gameActive) return;
-                if (currentLane > 0) { currentLane--; targetX = LANES[currentLane]; }
-            });
-
-            bindBtn(btnRight, () => {
-                if (!gameActive) return;
-                if (currentLane < LANES.length - 1) { currentLane++; targetX = LANES[currentLane]; }
-            });
-
-            bindBtn(btnFly, 
-                () => { // 按下起飛
-                    if (!gameActive) return;
-                    isFlying = true;
-                    if (audioInitialized && flySynth) flySynth.triggerAttack();
-                },
-                () => { // 放開降落
-                    if (!gameActive) return;
-                    isFlying = false;
-                    if (audioInitialized && flySynth) flySynth.triggerRelease();
-                }
-            );
-        }
-
-        async function startGame() {
-            if (!audioInitialized) {
-                await Tone.start();
-                initAudio();
-                audioInitialized = true;
+        /**
+         * Web Audio Synthesizer for Sci-Fi Tesla Sound Effects & High-Energy Racing BGM
+         */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+                this.bgmPlaying = false;
+                this.bgmTimer = null;
+                this.step = 0;
             }
 
-            // 重置狀態
-            score = 0;
-            batteryLevel = maxBattery;
-            currentLane = 1;
-            targetX = LANES[currentLane];
-            playerCar.position.set(targetX, groundLevel, 0);
-            playerCar.rotation.y = 0;
-            isFlying = false;
-            isSpinning = false;
-            invincibleTime = 0;
-            
-            // 清理場景物件
-            obstacles.forEach(obs => scene.remove(obs));
-            obstacles.length = 0;
-            items.forEach(item => scene.remove(item));
-            items.length = 0;
-
-            updateUI();
-            startScreen.classList.add('hidden');
-            uiLayer.classList.remove('hidden');
-            
-            Tone.Transport.start();
-            gameActive = true;
-        }
-
-        // === 音效初始化 (動感節奏) ===
-        function initAudio() {
-            // 背景音樂：降低音量，並換成柔和的三角波(triangle)
-            Tone.Transport.bpm.value = 135;
-            bgm = new Tone.Synth({
-                oscillator: { type: 'triangle' },
-                envelope: { attack: 0.1, decay: 0.3, sustain: 0.2, release: 1.2 }
-            }).toDestination();
-            bgm.volume.value = -25; // 音量從 -12 調降至 -25，變得更小聲溫和
-
-            const bassline = ["C2", "C2", "D#2", "F2", "C2", "C2", "G2", "F2"];
-            let bassIdx = 0;
-            Tone.Transport.scheduleRepeat(time => {
-                if(gameActive) {
-                    bgm.triggerAttackRelease(bassline[bassIdx], "8n", time);
-                    bassIdx = (bassIdx + 1) % bassline.length;
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
                 }
-            }, "8n");
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
 
-            // 飛行噪音
-            flySynth = new Tone.NoiseSynth({
-                noise: { type: 'pink' },
-                envelope: { attack: 0.5, decay: 0.1, sustain: 0.2, release: 0.5 }
-            }).toDestination();
-            flySynth.volume.value = -15;
+            toggle() {
+                this.enabled = !this.enabled;
+                if (!this.enabled) {
+                    this.stopBGM();
+                } else if (gameState && gameState.running) {
+                    this.startBGM();
+                }
+                return this.enabled;
+            }
 
-            // 獲得金幣音效
-            coinSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-            coinSynth.volume.value = -8;
+            startBGM() {
+                this.init();
+                if (!this.enabled || !this.ctx || this.bgmPlaying) return;
+                this.bgmPlaying = true;
+                this.step = 0;
+                const stepTime = 115; // ~130 BPM 16th-note high-octane tempo
 
-            // 獲得電池音效
-            batterySynth = new Tone.Synth({
-                oscillator: { type: 'sine' },
-                envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 1 }
-            }).toDestination();
-            batterySynth.volume.value = -5;
+                // Energetic minor scale bass & lead melody patterns
+                const bassNotes = [
+                    110, 110, 220, 110, 110, 110, 220, 110, // A2
+                    87.31, 87.31, 174.61, 87.31, 87.31, 87.31, 174.61, 87.31, // F2
+                    98.00, 98.00, 196.00, 98.00, 98.00, 98.00, 196.00, 98.00, // G2
+                    130.81, 130.81, 261.63, 130.81, 123.47, 123.47, 246.94, 196.00 // C3 -> B2
+                ];
 
-            // 撞車音效
-            crashSynth = new Tone.MembraneSynth().toDestination();
-            crashSynth.volume.value = 0;
+                const leadNotes = [
+                    440, 0, 523.25, 0, 659.25, 587.33, 523.25, 659.25,
+                    698.46, 0, 659.25, 523.25, 440, 0, 523.25, 587.33,
+                    587.33, 0, 659.25, 0, 783.99, 698.46, 659.25, 587.33,
+                    523.25, 659.25, 880, 0, 783.99, 659.25, 587.33, 523.25
+                ];
+
+                this.bgmTimer = setInterval(() => {
+                    if (!this.enabled || !this.ctx || !this.bgmPlaying) return;
+                    const now = this.ctx.currentTime;
+                    const s = this.step % 32;
+
+                    // 1. Driving Synth Bass
+                    const bFreq = bassNotes[s];
+                    if (bFreq) {
+                        const osc = this.ctx.createOscillator();
+                        const filter = this.ctx.createBiquadFilter();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(bFreq, now);
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(650 + (gameState.isFlying ? 500 : 0), now);
+                        gain.gain.setValueAtTime(0.065, now);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + 0.1);
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                    }
+
+                    // 2. Punchy Kick Drum on 4-on-the-floor beats
+                    if (s % 4 === 0) {
+                        const kickOsc = this.ctx.createOscillator();
+                        const kickGain = this.ctx.createGain();
+                        kickOsc.type = 'sine';
+                        kickOsc.frequency.setValueAtTime(140, now);
+                        kickOsc.frequency.exponentialRampToValueAtTime(32, now + 0.11);
+                        kickGain.gain.setValueAtTime(0.18, now);
+                        kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.11);
+                        kickOsc.connect(kickGain);
+                        kickGain.connect(this.ctx.destination);
+                        kickOsc.start(now);
+                        kickOsc.stop(now + 0.11);
+                    }
+
+                    // 3. Crisp Hi-Hat / Snare pulse on off-beats
+                    if (s % 2 === 1) {
+                        const hatOsc = this.ctx.createOscillator();
+                        const hatGain = this.ctx.createGain();
+                        hatOsc.type = 'triangle';
+                        hatOsc.frequency.setValueAtTime(s % 4 === 2 ? 320 : 4200, now);
+                        hatGain.gain.setValueAtTime(0.03, now);
+                        hatGain.gain.exponentialRampToValueAtTime(0.003, now + 0.04);
+                        hatOsc.connect(hatGain);
+                        hatGain.connect(this.ctx.destination);
+                        hatOsc.start(now);
+                        hatOsc.stop(now + 0.04);
+                    }
+
+                    // 4. Heroic Racing Lead Synth
+                    const lFreq = leadNotes[s];
+                    if (lFreq > 0) {
+                        const lOsc = this.ctx.createOscillator();
+                        const lGain = this.ctx.createGain();
+                        lOsc.type = 'square';
+                        const pitchBoost = gameState.isFlying ? 1.5 : 1.0;
+                        lOsc.frequency.setValueAtTime(lFreq * pitchBoost, now);
+                        lGain.gain.setValueAtTime(0.042, now);
+                        lGain.gain.exponentialRampToValueAtTime(0.005, now + 0.18);
+                        lOsc.connect(lGain);
+                        lGain.connect(this.ctx.destination);
+                        lOsc.start(now);
+                        lOsc.stop(now + 0.18);
+                    }
+
+                    this.step++;
+                }, stepTime);
+            }
+
+            stopBGM() {
+                this.bgmPlaying = false;
+                if (this.bgmTimer) {
+                    clearInterval(this.bgmTimer);
+                    this.bgmTimer = null;
+                }
+            }
+
+            playLaneSwitch() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    const now = this.ctx.currentTime;
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.exponentialRampToValueAtTime(520, now + 0.09);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } catch (e) {}
+            }
+
+            playCoin() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(987.77, now); // B5
+                    osc.frequency.setValueAtTime(1318.51, now + 0.06); // E6
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.008, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                } catch (e) {}
+            }
+
+            playPowerup() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.28);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } catch (e) {}
+            }
+
+            playThrusterLaunch() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.35);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.38);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.38);
+                } catch (e) {}
+            }
+
+            playCrash() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.linearRampToValueAtTime(35, now + 0.45);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } catch (e) {}
+            }
+
+            playLifeUp() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + idx * 0.06 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.06);
+                        osc.stop(now + idx * 0.06 + 0.2);
+                    });
+                } catch (e) {}
+            }
         }
 
-        // === Three.js 視覺建構 ===
-        function initThreeJS() {
-            const canvas = document.getElementById('game-canvas');
+        const sfx = new SoundEffects();
+
+        const LANES = [-7.5, -2.5, 2.5, 7.5]; // 4 highway lanes (Left 2 oncoming, Right 2 forward)
+        const GROUND_Y = 0;
+        const FLIGHT_ALTITUDE = 4.3;
+
+        let gameState = {
+            running: false,
+            score: 0,
+            bestScore: 0,
+            coins: 0,
+            lives: 5,
+            isSpinning: false,
+            spinTimer: 0,
+            invincibleTimer: 0,
+            speed: 42, // Units per second
+            baseSpeed: 42,
+            maxSpeed: 88,
+            currentLane: 2, // Start in right-center lane (index 0, 1, 2, 3)
+            targetX: LANES[2],
+            isFlying: false,
+            energy: 100, // 0 to 100
+            maxEnergy: 100,
+            energyDrainRate: 30, // Drain per second (approx 3.3s continuous full flight)
+            energyRegenRate: 18, // Regen per second on ground
+            flightCooldown: false
+        };
+
+        // Three.js Globals
+        let scene, camera, renderer, clock;
+        let playerCar, flameGroup, wingLeft, wingRight, shadowMesh;
+        let playerWheels = [];
+        let roadMarkings = [];
+        let roadsideObjects = [];
+        let skyClouds = [];
+        let trafficCars = [];
+        let coinItems = [];
+        let batteryItems = [];
+        let goldCubeItems = [];
+        let particles = [];
+
+        // Camera Orbit Controls via Mouse Drag
+        let camAngleX = 0;
+        let camAngleY = 0;
+        let isDraggingCam = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+
+        function initThreeScene() {
+            const container = document.getElementById('game-wrapper');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // 晴天藍色
-            scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+            scene.background = new THREE.Color(0x60a5fa);
+            scene.fog = new THREE.FogExp2(0xbae6fd, 0.0055);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-            camera.position.set(0, 8, 16);
-            camera.lookAt(0, 0, -10);
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 260);
+            camera.position.set(0, 6.2, 13.5);
 
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            dirLight.position.set(20, 40, 20);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
+            clock = new THREE.Clock();
+
+            // Bright Daylight Lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4ade80, 0.9);
+            hemiLight.position.set(0, 50, 0);
+            scene.add(hemiLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
+            sunLight.position.set(35, 65, 30);
+            scene.add(sunLight);
+
+            const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.5);
+            fillLight.position.set(-30, 25, -20);
+            scene.add(fillLight);
+
+            createEnvironment();
+            createTeslaCyberCar();
+            setupInputs();
+            window.addEventListener('resize', onWindowResize);
         }
 
         function createEnvironment() {
-            // 柏油路面
-            const roadGeo = new THREE.PlaneGeometry(20, 200);
-            const roadMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
+            // Lush Green Grass Terrain outside the highway
+            const grassGeo = new THREE.PlaneGeometry(500, 400);
+            const grassMat = new THREE.MeshLambertMaterial({ color: 0x4ade80 });
+            const grass = new THREE.Mesh(grassGeo, grassMat);
+            grass.rotation.x = -Math.PI / 2;
+            grass.position.set(0, -0.08, -120);
+            scene.add(grass);
+
+            // Concrete Highway Shoulders
+            const shoulderGeo = new THREE.PlaneGeometry(25, 320);
+            const shoulderMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+            const shoulder = new THREE.Mesh(shoulderGeo, shoulderMat);
+            shoulder.rotation.x = -Math.PI / 2;
+            shoulder.position.set(0, -0.03, -110);
+            scene.add(shoulder);
+
+            // Main Daytime Asphalt Road Surface
+            const roadGeo = new THREE.PlaneGeometry(22, 320);
+            const roadMat = new THREE.MeshStandardMaterial({
+                color: 0x334155,
+                roughness: 0.75,
+                metalness: 0.1
+            });
             const road = new THREE.Mesh(roadGeo, roadMat);
             road.rotation.x = -Math.PI / 2;
-            road.position.z = -50;
-            road.receiveShadow = true;
+            road.position.z = -110;
             scene.add(road);
 
-            // 車道分隔線 (3條線隔開4車道)
-            for(let i=0; i<30; i++) {
-                const zPos = i * -10;
-                [-3, 0, 3].forEach(x => {
-                    const lineGeo = new THREE.PlaneGeometry(0.2, 4);
-                    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                    const line = new THREE.Mesh(lineGeo, lineMat);
-                    line.rotation.x = -Math.PI / 2;
-                    line.position.set(x, 0.05, zPos);
-                    scene.add(line);
-                    roadLines.push(line);
+            // Metallic Highway Guardrails
+            const railGeo = new THREE.BoxGeometry(0.4, 0.65, 320);
+            const railMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.6, roughness: 0.3 });
+
+            const leftRail = new THREE.Mesh(railGeo, railMat);
+            leftRail.position.set(-11.2, 0.32, -110);
+            scene.add(leftRail);
+
+            const rightRail = new THREE.Mesh(railGeo, railMat);
+            rightRail.position.set(11.2, 0.32, -110);
+            scene.add(rightRail);
+
+            // Center Double Yellow Divider
+            const centerLineGeo = new THREE.PlaneGeometry(0.32, 320);
+            const centerLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+            const centerLine = new THREE.Mesh(centerLineGeo, centerLineMat);
+            centerLine.rotation.x = -Math.PI / 2;
+            centerLine.position.set(0, 0.03, -110);
+            scene.add(centerLine);
+
+            // Crisp White Dashed Lane Markings
+            const dashGeo = new THREE.PlaneGeometry(0.2, 4.5);
+            const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+            for (let z = 20; z > -250; z -= 12) {
+                [-5, 5].forEach(xPos => {
+                    const dash = new THREE.Mesh(dashGeo, dashMat);
+                    dash.rotation.x = -Math.PI / 2;
+                    dash.position.set(xPos, 0.03, z);
+                    scene.add(dash);
+                    roadMarkings.push(dash);
                 });
             }
 
-            // 路邊綠樹
-            for(let i=0; i<15; i++) {
-                const zPos = i * -15;
-                createTree(-11, zPos);
-                createTree(11, zPos);
+            // Streetlights (路燈) along both sides of the highway
+            for (let z = 15; z > -255; z -= 22) {
+                [-12.2, 12.2].forEach(xSide => {
+                    const lampGroup = createStreetLight(xSide < 0 ? 1 : -1);
+                    lampGroup.position.set(xSide, 0, z);
+                    scene.add(lampGroup);
+                    roadsideObjects.push(lampGroup);
+                });
+            }
+
+            // Trees & Bushes (行道樹與樹叢) along both sides
+            for (let z = 20; z > -255; z -= 9) {
+                [-1, 1].forEach(dir => {
+                    // Bush clusters near the guardrail
+                    const bush = createBushCluster();
+                    bush.position.set(dir * (13.8 + Math.random() * 4), 0, z + (Math.random() * 4 - 2));
+                    scene.add(bush);
+                    roadsideObjects.push(bush);
+
+                    // Tall trees further out
+                    const tree = createTree(Math.random() > 0.45);
+                    tree.position.set(dir * (18 + Math.random() * 24), 0, z + (Math.random() * 6 - 3));
+                    scene.add(tree);
+                    roadsideObjects.push(tree);
+                });
+            }
+
+            // Distant Scenic Background Hills & Daytime Buildings
+            for (let i = 0; i < 24; i++) {
+                const side = i % 2 === 0 ? -1 : 1;
+                const zOffset = 15 - (i * 11.5);
+                if (i % 3 === 0) {
+                    // Distant modern glass office building
+                    const h = 16 + Math.random() * 26;
+                    const w = 6 + Math.random() * 6;
+                    const bGeo = new THREE.BoxGeometry(w, h, w);
+                    const bMat = new THREE.MeshStandardMaterial({
+                        color: 0xe0f2fe,
+                        metalness: 0.5,
+                        roughness: 0.2
+                    });
+                    const bldg = new THREE.Mesh(bGeo, bMat);
+                    bldg.position.set(side * (45 + Math.random() * 20), h / 2, zOffset);
+                    scene.add(bldg);
+                    roadsideObjects.push(bldg);
+                } else {
+                    // Green Low-Poly Hill
+                    const hillRadius = 14 + Math.random() * 14;
+                    const hillHeight = 10 + Math.random() * 16;
+                    const hillGeo = new THREE.ConeGeometry(hillRadius, hillHeight, 7);
+                    const hillMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+                    const hill = new THREE.Mesh(hillGeo, hillMat);
+                    hill.position.set(side * (48 + Math.random() * 25), hillHeight / 2 - 1, zOffset);
+                    scene.add(hill);
+                    roadsideObjects.push(hill);
+                }
+            }
+
+            // Fluffy White Clouds in the Sky
+            for (let i = 0; i < 16; i++) {
+                const cloud = createCloud();
+                cloud.position.set(
+                    (Math.random() - 0.5) * 140,
+                    26 + Math.random() * 18,
+                    10 - i * 17
+                );
+                scene.add(cloud);
+                skyClouds.push(cloud);
             }
         }
 
-        function createTree(x, z) {
+        function createStreetLight(armDir) {
             const group = new THREE.Group();
-            
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 2, 8), trunkMat);
-            trunk.position.y = 1;
-            trunk.castShadow = true;
-            group.add(trunk);
-            
-            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
-            const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 8), leavesMat);
-            leaves.position.y = 4.5;
-            leaves.castShadow = true;
-            group.add(leaves);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.3 });
 
-            group.position.set(x, 0, z);
-            scene.add(group);
-            trees.push(group);
+            // Vertical Pole
+            const poleGeo = new THREE.CylinderGeometry(0.12, 0.18, 7.5, 8);
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.y = 3.75;
+            group.add(pole);
+
+            // Overhanging Arm
+            const armGeo = new THREE.BoxGeometry(2.4, 0.14, 0.14);
+            const arm = new THREE.Mesh(armGeo, poleMat);
+            arm.position.set(armDir * 1.1, 7.4, 0);
+            group.add(arm);
+
+            // Lamp Head & Glowing Bulb
+            const headGeo = new THREE.BoxGeometry(0.65, 0.18, 0.35);
+            const head = new THREE.Mesh(headGeo, poleMat);
+            head.position.set(armDir * 2.1, 7.35, 0);
+            group.add(head);
+
+            const bulbGeo = new THREE.PlaneGeometry(0.5, 0.25);
+            const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide });
+            const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+            bulb.rotation.x = Math.PI / 2;
+            bulb.position.set(armDir * 2.1, 7.24, 0);
+            group.add(bulb);
+
+            return group;
         }
 
-        // 建立純白特仕版跑車 (根據您的圖片需求)
-        function createPlayerCar() {
+        function createBushCluster() {
+            const group = new THREE.Group();
+            const colors = [0x16a34a, 0x22c55e, 0x15803d];
+            const mat = new THREE.MeshLambertMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
+
+            for (let i = 0; i < 3; i++) {
+                const r = 0.65 + Math.random() * 0.45;
+                const geo = new THREE.DodecahedronGeometry(r, 1);
+                const sphere = new THREE.Mesh(geo, mat);
+                sphere.position.set((i - 1) * 0.6, r * 0.75, (Math.random() - 0.5) * 0.5);
+                group.add(sphere);
+            }
+            return group;
+        }
+
+        function createTree(isPine) {
+            const group = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 2.4, 7);
+            const trunkMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 1.2;
+            group.add(trunk);
+
+            if (isPine) {
+                const leafMat = new THREE.MeshLambertMaterial({ color: 0x15803d });
+                for (let l = 0; l < 3; l++) {
+                    const coneGeo = new THREE.ConeGeometry(1.9 - l * 0.4, 2.6, 7);
+                    const cone = new THREE.Mesh(coneGeo, leafMat);
+                    cone.position.y = 2.8 + l * 1.45;
+                    group.add(cone);
+                }
+            } else {
+                const leafMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+                const crownGeo = new THREE.DodecahedronGeometry(2.1, 1);
+                const crown = new THREE.Mesh(crownGeo, leafMat);
+                crown.position.y = 3.6;
+                group.add(crown);
+            }
+            const s = 0.85 + Math.random() * 0.5;
+            group.scale.set(s, s, s);
+            return group;
+        }
+
+        function createCloud() {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
+            for (let i = 0; i < 4; i++) {
+                const r = 2.2 + Math.random() * 1.8;
+                const geo = new THREE.DodecahedronGeometry(r, 1);
+                const puff = new THREE.Mesh(geo, mat);
+                puff.position.set((i - 1.5) * 2.3, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 1.2);
+                group.add(puff);
+            }
+            return group;
+        }
+
+        function createTeslaCyberCar() {
             playerCar = new THREE.Group();
+            playerWheels = [];
 
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.4 }); // 白車身
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 }); // 黑側裙/車窗
+            // Silver-White Satin Metallic Paint
+            const silverPaintMat = new THREE.MeshStandardMaterial({
+                color: 0xf1f5f9,
+                metalness: 0.65,
+                roughness: 0.2
+            });
 
-            // 底盤/黑色側裙
-            const skirt = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.3, 4.4), darkMat);
-            skirt.position.y = 0.35;
-            playerCar.add(skirt);
+            // Dark Carbon Lower Splitter & Diffuser
+            const darkTrimMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                metalness: 0.4,
+                roughness: 0.5
+            });
 
-            // 主要車身 (白色)
-            const base = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.4, 4.2), bodyMat);
-            base.position.set(0, 0.7, 0);
-            base.castShadow = true;
-            playerCar.add(base);
+            // Flush Panoramic Tinted Glass Canopy
+            const glassCanopyMat = new THREE.MeshStandardMaterial({
+                color: 0x1c1917,
+                metalness: 0.95,
+                roughness: 0.06
+            });
 
-            // 車頭削尖
-            const noseGeo = new THREE.BoxGeometry(2.0, 0.3, 1.2);
-            noseGeo.translate(0, 0, -0.6); // 改變旋轉中心
-            const nose = new THREE.Mesh(noseGeo, bodyMat);
-            nose.position.set(0, 0.75, -2.1);
-            nose.rotation.x = Math.PI / 12; // 向下傾斜
-            playerCar.add(nose);
+            // 1. Lower Aerodynamic Splitter & Underbody Skirt
+            const splitterGeo = new THREE.BoxGeometry(2.26, 0.22, 4.65);
+            const splitter = new THREE.Mesh(splitterGeo, darkTrimMat);
+            splitter.position.set(0, 0.31, 0);
+            playerCar.add(splitter);
 
-            // 黑色駕駛艙/車窗
-            const cabinGeo = new THREE.BoxGeometry(1.6, 0.7, 2.2);
-            const cabin = new THREE.Mesh(cabinGeo, darkMat);
-            cabin.position.set(0, 1.1, -0.2);
-            playerCar.add(cabin);
+            // 2. Main Sculpted Lower Body Tub
+            const bodyGeo = new THREE.BoxGeometry(2.22, 0.46, 4.55);
+            const body = new THREE.Mesh(bodyGeo, silverPaintMat);
+            body.position.set(0, 0.58, 0.02);
+            playerCar.add(body);
 
-            // 大尾翼
-            const spoiler = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.8), bodyMat);
-            spoiler.position.set(0, 1.3, 2.0);
-            spoiler.rotation.x = -Math.PI / 16;
-            playerCar.add(spoiler);
+            // 3. Sloping Wedge Front Hood
+            const hoodGeo = new THREE.BoxGeometry(2.14, 0.25, 1.55);
+            const hood = new THREE.Mesh(hoodGeo, silverPaintMat);
+            hood.position.set(0, 0.76, -1.48);
+            hood.rotation.x = 0.16;
+            playerCar.add(hood);
 
-            // 尾翼支架
-            const supL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.3), darkMat);
-            supL.position.set(-0.8, 1.1, 2.0);
-            playerCar.add(supL);
-            const supR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.3), darkMat);
-            supR.position.set(0.8, 1.1, 2.0);
-            playerCar.add(supR);
+            // 4. Sculpted Front & Rear Muscular Fenders (Left & Right)
+            [-0.92, 0.92].forEach(xPos => {
+                const fenderGeo = new THREE.BoxGeometry(0.42, 0.34, 4.42);
+                const fender = new THREE.Mesh(fenderGeo, silverPaintMat);
+                fender.position.set(xPos, 0.78, 0.04);
+                fender.rotation.z = xPos < 0 ? -0.12 : 0.12;
+                playerCar.add(fender);
 
-            // 輪胎與輪圈
-            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-            const rimMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 }); // 黑色輪圈
-            
-            const wheelPositions = [ [-1.1, 0.4, 1.4], [1.1, 0.4, 1.4], [-1.1, 0.4, -1.2], [1.1, 0.4, -1.2] ];
+                // Side Orange/Red Fender Marker Indicator
+                const markerGeo = new THREE.BoxGeometry(0.05, 0.06, 0.28);
+                const markerMat = new THREE.MeshBasicMaterial({ color: 0xff4500 });
+                const marker = new THREE.Mesh(markerGeo, markerMat);
+                marker.position.set(xPos < 0 ? -1.13 : 1.13, 0.74, -0.68);
+                playerCar.add(marker);
+            });
+
+            // 5. Sleek Seamless Dark Glass Coupe Canopy
+            const canopyGeo = new THREE.CylinderGeometry(0.84, 1.38, 2.75, 4);
+            const canopy = new THREE.Mesh(canopyGeo, glassCanopyMat);
+            canopy.rotation.y = Math.PI / 4;
+            canopy.scale.set(0.95, 0.42, 1.48);
+            canopy.position.set(0, 1.12, 0.08);
+            playerCar.add(canopy);
+
+            // 6. Silver A-Pillars & Roofline Buttresses framing the dark glass
+            [-0.86, 0.86].forEach(xPos => {
+                const pillarGeo = new THREE.BoxGeometry(0.1, 0.12, 2.3);
+                const pillar = new THREE.Mesh(pillarGeo, silverPaintMat);
+                pillar.position.set(xPos, 1.1, 0.25);
+                pillar.rotation.x = -0.14;
+                playerCar.add(pillar);
+            });
+
+            // 7. Signature Full-Width Razor-Thin LED Light Bar & Dark Lower Intake
+            const intakeGeo = new THREE.BoxGeometry(2.12, 0.22, 0.12);
+            const intake = new THREE.Mesh(intakeGeo, darkTrimMat);
+            intake.position.set(0, 0.45, -2.28);
+            playerCar.add(intake);
+
+            const headBarGeo = new THREE.BoxGeometry(2.16, 0.07, 0.12);
+            const headBarMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const headBar = new THREE.Mesh(headBarGeo, headBarMat);
+            headBar.position.set(0, 0.62, -2.29);
+            playerCar.add(headBar);
+
+            // 8. Rear Fastback Deck & Full-Width Red Tail Light Bar
+            const tailBarGeo = new THREE.BoxGeometry(2.16, 0.1, 0.1);
+            const tailBarMat = new THREE.MeshBasicMaterial({ color: 0xff003c });
+            const tailBar = new THREE.Mesh(tailBarGeo, tailBarMat);
+            tailBar.position.set(0, 0.86, 2.31);
+            playerCar.add(tailBar);
+
+            // 9. Deployable Silver-Cyan Aero Wings (Extend when flying)
+            const wingGeo = new THREE.BoxGeometry(1.9, 0.07, 1.5);
+            const wingMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                emissive: 0x0284c7,
+                emissiveIntensity: 0.35,
+                metalness: 0.8
+            });
+            wingLeft = new THREE.Mesh(wingGeo, wingMat);
+            wingLeft.position.set(-0.3, 0.68, 0.35);
+            playerCar.add(wingLeft);
+
+            wingRight = new THREE.Mesh(wingGeo, wingMat);
+            wingRight.position.set(0.3, 0.68, 0.35);
+            playerCar.add(wingRight);
+
+            // 10. 5-Spoke Two-Tone Aero Sport Wheels
+            const wheelGeo = new THREE.CylinderGeometry(0.43, 0.43, 0.32, 24);
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.7 });
+            const spokeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.85, roughness: 0.15 });
+            const innerRimMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+
+            const wheelPositions = [
+                [-1.12, 0.43, -1.35],
+                [1.12, 0.43, -1.35],
+                [-1.12, 0.43, 1.40],
+                [1.12, 0.43, 1.40]
+            ];
             wheelPositions.forEach(pos => {
                 const wheelGroup = new THREE.Group();
-                
-                const tireGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
-                tireGeo.rotateZ(Math.PI / 2);
-                const tire = new THREE.Mesh(tireGeo, wheelMat);
-                
-                const rimGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.32, 6); // 六角形輪圈
-                rimGeo.rotateZ(Math.PI / 2);
-                const rim = new THREE.Mesh(rimGeo, rimMat);
-                
+                const tire = new THREE.Mesh(wheelGeo, tireMat);
+                tire.rotation.z = Math.PI / 2;
                 wheelGroup.add(tire);
-                wheelGroup.add(rim);
+
+                const discGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.33, 16);
+                const disc = new THREE.Mesh(discGeo, innerRimMat);
+                disc.rotation.z = Math.PI / 2;
+                wheelGroup.add(disc);
+
+                // 5 Silver Star Spokes
+                for (let s = 0; s < 5; s++) {
+                    const angle = (s * Math.PI * 2) / 5;
+                    const spokeGeo = new THREE.BoxGeometry(0.35, 0.08, 0.31);
+                    const spoke = new THREE.Mesh(spokeGeo, spokeMat);
+                    spoke.rotation.x = angle;
+                    wheelGroup.add(spoke);
+                }
+
                 wheelGroup.position.set(...pos);
                 playerCar.add(wheelGroup);
+                playerWheels.push(wheelGroup);
             });
 
-            // 推進器火焰 (預設隱藏)
-            playerCar.thrusters = [];
-            const thrustMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.8 });
-            [[-0.6, 0.3, 2.4], [0.6, 0.3, 2.4]].forEach(pos => {
-                const thrustGeo = new THREE.ConeGeometry(0.3, 1.5, 8);
-                thrustGeo.rotateX(Math.PI / 2);
-                const thrust = new THREE.Mesh(thrustGeo, thrustMat);
-                thrust.position.set(...pos);
-                thrust.visible = false;
-                playerCar.add(thrust);
-                playerCar.thrusters.push(thrust);
-            });
+            // SpaceX Rocket Thruster Plumes (Visible when flying)
+            flameGroup = new THREE.Group();
+            const coneGeo = new THREE.ConeGeometry(0.32, 1.9, 12);
+            const coneMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.9 });
+            const innerConeGeo = new THREE.ConeGeometry(0.18, 1.25, 12);
+            const innerConeMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
 
+            [-0.55, 0.55].forEach(xOffset => {
+                const thruster = new THREE.Group();
+                const outer = new THREE.Mesh(coneGeo, coneMat);
+                outer.rotation.x = Math.PI / 2;
+                const inner = new THREE.Mesh(innerConeGeo, innerConeMat);
+                inner.rotation.x = Math.PI / 2;
+                thruster.add(outer);
+                thruster.add(inner);
+                thruster.position.set(xOffset, 0.55, 2.95);
+                flameGroup.add(thruster);
+            });
+            flameGroup.visible = false;
+            playerCar.add(flameGroup);
+
+            // Ground Shadow Ring
+            const shadowGeo = new THREE.PlaneGeometry(2.35, 4.6);
+            const shadowMat = new THREE.MeshBasicMaterial({
+                color: 0x0f172a,
+                transparent: true,
+                opacity: 0.38,
+                side: THREE.DoubleSide
+            });
+            shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+            shadowMesh.rotation.x = -Math.PI / 2;
+            shadowMesh.position.set(LANES[gameState.currentLane], 0.04, 0);
+            scene.add(shadowMesh);
+
+            playerCar.position.set(LANES[gameState.currentLane], GROUND_Y, 0);
             scene.add(playerCar);
-            playerCar.position.set(targetX, groundLevel, 0);
         }
 
-        // === 隨機生成物件 ===
-        function spawnObject() {
-            const lane = LANES[Math.floor(Math.random() * LANES.length)];
-            const zPos = -100;
-            const rand = Math.random();
+        function createTrafficCar(laneIndex, zPos) {
+            const carGroup = new THREE.Group();
+            const isOncoming = laneIndex < 2;
 
-            if (rand < 0.6) {
-                // 產生障礙車輛
-                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffa500];
-                const mat = new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)] });
-                const obs = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 4), mat);
-                obs.position.set(lane, 0.6, zPos);
-                obs.castShadow = true;
-                scene.add(obs);
-                obstacles.push(obs);
-            } else if (rand < 0.9) {
-                // 產生金幣
-                const coinGroup = new THREE.Group();
-                const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1, roughness: 0.2 });
-                const coinGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.2, 16);
-                coinGeo.rotateX(Math.PI / 2);
-                const coin = new THREE.Mesh(coinGeo, coinMat);
-                coin.position.y = 1;
-                coinGroup.add(coin);
-                coinGroup.position.set(lane, 0, zPos);
-                coinGroup.type = 'coin';
-                scene.add(coinGroup);
-                items.push(coinGroup);
+            // Daytime Vibrant Vehicle Colors
+            const palette = [0xef4444, 0x2563eb, 0x10b981, 0xf59e0b, 0x7c3aed, 0xec4899, 0x0891b2];
+            const bodyColor = palette[Math.floor(Math.random() * palette.length)];
+
+            const bodyGeo = new THREE.BoxGeometry(2.05, 0.72, 4.2);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.25, metalness: 0.5 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.62;
+            carGroup.add(body);
+
+            const topGeo = new THREE.BoxGeometry(1.75, 0.52, 2.15);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.15, metalness: 0.8 });
+            const top = new THREE.Mesh(topGeo, topMat);
+            top.position.set(0, 1.2, isOncoming ? -0.2 : 0.2);
+            carGroup.add(top);
+
+            // Wheels for Traffic Cars
+            const wGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.26, 12);
+            const wMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+            const wheels = [];
+            [[-1.02, 0.36, -1.25], [1.02, 0.36, -1.25], [-1.02, 0.36, 1.25], [1.02, 0.36, 1.25]].forEach(p => {
+                const w = new THREE.Mesh(wGeo, wMat);
+                w.rotation.z = Math.PI / 2;
+                w.position.set(...p);
+                carGroup.add(w);
+                wheels.push(w);
+            });
+
+            // Headlights & Taillights
+            const lightGeo = new THREE.BoxGeometry(1.8, 0.15, 0.1);
+            const whiteLightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const redLightMat = new THREE.MeshBasicMaterial({ color: 0xff0033 });
+
+            const frontLight = new THREE.Mesh(lightGeo, isOncoming ? whiteLightMat : redLightMat);
+            frontLight.position.set(0, 0.68, 2.11);
+            carGroup.add(frontLight);
+
+            // Turn Signal Indicators (for dynamic lane-changing cars)
+            const blinkerGeo = new THREE.BoxGeometry(0.22, 0.14, 0.12);
+            const blinkerMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+            const leftBlinker = new THREE.Mesh(blinkerGeo, blinkerMat);
+            leftBlinker.position.set(-0.88, 0.52, 2.12);
+            leftBlinker.visible = false;
+            carGroup.add(leftBlinker);
+
+            const rightBlinker = new THREE.Mesh(blinkerGeo, blinkerMat);
+            rightBlinker.position.set(0.88, 0.52, 2.12);
+            rightBlinker.visible = false;
+            carGroup.add(rightBlinker);
+
+            // Some cars will dynamically change lanes within their direction side (0<->1 or 2<->3)
+            const canChangeLane = Math.random() < 0.35;
+            const targetLane = canChangeLane ? (laneIndex === 0 ? 1 : laneIndex === 1 ? 0 : laneIndex === 2 ? 3 : 2) : laneIndex;
+
+            carGroup.position.set(LANES[laneIndex], 0, zPos);
+            carGroup.userData = {
+                lane: laneIndex,
+                targetLane: targetLane,
+                hasSwitched: false,
+                switchTriggerZ: -70 - Math.random() * 55,
+                isOncoming: isOncoming,
+                ownSpeed: isOncoming ? (18 + Math.random() * 14) : (-16 - Math.random() * 10),
+                wheels: wheels,
+                leftBlinker: leftBlinker,
+                rightBlinker: rightBlinker,
+                phase: Math.random() * Math.PI * 2
+            };
+
+            scene.add(carGroup);
+            trafficCars.push(carGroup);
+        }
+
+        function createCoin(laneIndex, zPos, isHighAltitude = false) {
+            const coinGroup = new THREE.Group();
+            const geo = new THREE.CylinderGeometry(0.75, 0.75, 0.2, 20);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                emissive: 0xca8a04,
+                emissiveIntensity: 0.5,
+                metalness: 0.9,
+                roughness: 0.1
+            });
+            const coin = new THREE.Mesh(geo, mat);
+            coin.rotation.z = Math.PI / 2;
+            coin.rotation.y = Math.PI / 2;
+            coinGroup.add(coin);
+
+            const yHeight = isHighAltitude ? (FLIGHT_ALTITUDE + 0.7) : 1.05;
+            coinGroup.position.set(LANES[laneIndex], yHeight, zPos);
+            coinGroup.userData = { isAirCoin: isHighAltitude };
+
+            scene.add(coinGroup);
+            coinItems.push(coinGroup);
+        }
+
+        function createSuperchargerBattery(laneIndex, zPos) {
+            const batGroup = new THREE.Group();
+            const geo = new THREE.OctahedronGeometry(0.85, 0);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0x00f3ff,
+                emissive: 0x00f3ff,
+                emissiveIntensity: 0.7,
+                wireframe: false
+            });
+            const core = new THREE.Mesh(geo, mat);
+            batGroup.add(core);
+
+            const ringGeo = new THREE.TorusGeometry(1.05, 0.07, 8, 24);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            batGroup.add(ring);
+
+            batGroup.position.set(LANES[laneIndex], 1.2, zPos);
+            scene.add(batGroup);
+            batteryItems.push(batGroup);
+        }
+
+        function createGoldCube(laneIndex, zPos) {
+            const cubeGroup = new THREE.Group();
+            const geo = new THREE.BoxGeometry(1.15, 1.15, 1.15);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 0.75,
+                metalness: 0.95,
+                roughness: 0.1
+            });
+            const cube = new THREE.Mesh(geo, mat);
+            cubeGroup.add(cube);
+
+            // Outer glowing wireframe frame
+            const wireGeo = new THREE.BoxGeometry(1.42, 1.42, 1.42);
+            const wireMat = new THREE.MeshBasicMaterial({
+                color: 0xfef08a,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.75
+            });
+            const wireFrame = new THREE.Mesh(wireGeo, wireMat);
+            cubeGroup.add(wireFrame);
+
+            cubeGroup.position.set(LANES[laneIndex], 1.35, zPos);
+            scene.add(cubeGroup);
+            goldCubeItems.push(cubeGroup);
+        }
+
+        function spawnBurstParticles(position, colorHex, count = 12) {
+            const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 1 });
+
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(geo, mat.clone());
+                p.position.copy(position);
+                p.userData = {
+                    vel: new THREE.Vector3(
+                        (Math.random() - 0.5) * 10,
+                        (Math.random() - 0.2) * 10,
+                        (Math.random() - 0.5) * 10
+                    ),
+                    life: 1.0
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+        }
+
+        function moveLeftLane() {
+            if (!gameState.running || gameState.isSpinning) return;
+            if (gameState.currentLane > 0) {
+                gameState.currentLane--;
+                gameState.targetX = LANES[gameState.currentLane];
+                sfx.playLaneSwitch();
+                pulseButton('ctrl-left');
+            }
+        }
+
+        function moveRightLane() {
+            if (!gameState.running || gameState.isSpinning) return;
+            if (gameState.currentLane < LANES.length - 1) {
+                gameState.currentLane++;
+                gameState.targetX = LANES[gameState.currentLane];
+                sfx.playLaneSwitch();
+                pulseButton('ctrl-right');
+            }
+        }
+
+        function toggleFlightThruster() {
+            if (!gameState.running || gameState.isSpinning) return;
+
+            if (gameState.isFlying) {
+                // Allow early landing if pressed again
+                deactivateFlight();
+                return;
+            }
+
+            if (gameState.energy >= 20 && !gameState.flightCooldown) {
+                gameState.isFlying = true;
+                flameGroup.visible = true;
+                sfx.playThrusterLaunch();
+                showToast('SPACEX 推進器啟動：高空飛行模式！');
+                pulseButton('ctrl-fly');
+                updateFlightUI();
+            }
+        }
+
+        function deactivateFlight() {
+            if (!gameState.isFlying) return;
+            gameState.isFlying = false;
+            flameGroup.visible = false;
+            hideToast();
+            updateFlightUI();
+        }
+
+        function pulseButton(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.classList.add('active-press');
+            setTimeout(() => btn.classList.remove('active-press'), 140);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('floating-toast');
+            const text = document.getElementById('floating-toast-text');
+            text.textContent = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('floating-toast');
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+        }
+
+        function setupInputs() {
+            // Keyboard Controls
+            window.addEventListener('keydown', (e) => {
+                if (!gameState.running) {
+                    if (e.code === 'Enter') startGame();
+                    return;
+                }
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    e.preventDefault();
+                    moveLeftLane();
+                } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    e.preventDefault();
+                    moveRightLane();
+                } else if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                    e.preventDefault();
+                    toggleFlightThruster();
+                } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                    e.preventDefault();
+                    deactivateFlight();
+                }
+            });
+
+            // Bottom UI Buttons (Support instant touchstart on mobile & click on desktop)
+            const bindControlBtn = (id, action) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sfx.init();
+                    action();
+                }, { passive: false });
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    sfx.init();
+                    action();
+                });
+            };
+
+            bindControlBtn('ctrl-left', moveLeftLane);
+            bindControlBtn('ctrl-right', moveRightLane);
+            bindControlBtn('ctrl-fly', toggleFlightThruster);
+
+            // Start / Restart Button
+            document.getElementById('btn-start-game').addEventListener('click', () => {
+                sfx.init();
+                startGame();
+            });
+
+            // Sound Toggle
+            document.getElementById('btn-sound').addEventListener('click', () => {
+                sfx.init();
+                const isOn = sfx.toggle();
+                const icon = document.getElementById('icon-sound');
+                icon.className = isOn ? 'fa-solid fa-volume-high text-lg' : 'fa-solid fa-volume-xmark text-lg text-gray-500';
+            });
+
+            // Reset Camera Angle
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                camAngleX = 0;
+                camAngleY = 0;
+            });
+
+            // Touch Swipe & Mouse Camera Drag on Canvas
+            const wrapper = document.getElementById('game-wrapper');
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            wrapper.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', (e) => {
+                if (!gameState.running || e.changedTouches.length === 0) return;
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+
+                if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy)) {
+                    if (dx < 0) moveLeftLane();
+                    else moveRightLane();
+                } else if (dy < -40 && Math.abs(dy) > Math.abs(dx)) {
+                    toggleFlightThruster();
+                } else if (dy > 40 && Math.abs(dy) > Math.abs(dx)) {
+                    deactivateFlight();
+                }
+            }, { passive: true });
+
+            // Mouse Camera Angle Inspection
+            wrapper.addEventListener('mousedown', (e) => {
+                isDraggingCam = true;
+                prevMouseX = e.clientX;
+                prevMouseY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDraggingCam) return;
+                const dx = e.clientX - prevMouseX;
+                const dy = e.clientY - prevMouseY;
+                camAngleX = Math.max(-0.6, Math.min(0.6, camAngleX + dx * 0.005));
+                camAngleY = Math.max(-0.2, Math.min(0.4, camAngleY + dy * 0.004));
+                prevMouseX = e.clientX;
+                prevMouseY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => {
+                isDraggingCam = false;
+            });
+        }
+
+        function clearEntities() {
+            trafficCars.forEach(c => scene.remove(c));
+            coinItems.forEach(c => scene.remove(c));
+            batteryItems.forEach(b => scene.remove(b));
+            goldCubeItems.forEach(g => scene.remove(g));
+            particles.forEach(p => scene.remove(p));
+            trafficCars = [];
+            coinItems = [];
+            batteryItems = [];
+            goldCubeItems = [];
+            particles = [];
+        }
+
+        function populateInitialWave() {
+            for (let z = -55; z >= -230; z -= 32) {
+                spawnWaveAtZ(z);
+            }
+        }
+
+        function spawnWaveAtZ(zPos) {
+            // Pick 1 to 2 lanes for traffic cars (never block all 4 lanes on ground)
+            const availableLanes = [0, 1, 2, 3];
+            const numCars = Math.random() < 0.45 ? 2 : 1;
+
+            for (let i = 0; i < numCars; i++) {
+                const randIdx = Math.floor(Math.random() * availableLanes.length);
+                const chosenLane = availableLanes.splice(randIdx, 1)[0];
+                createTrafficCar(chosenLane, zPos + (Math.random() * 8 - 4));
+            }
+
+            // Spawn a line of coins in one of the remaining open lanes or in the sky above a car!
+            const coinLane = Math.floor(Math.random() * 4);
+            const isSkyArc = Math.random() < 0.35; // 35% chance coins are up in the sky for flying cars
+            for (let c = 0; c < 3; c++) {
+                createCoin(coinLane, zPos - c * 4.5, isSkyArc);
+            }
+
+            // Occasional Supercharger Energy Cell
+            if (Math.random() < 0.22 && availableLanes.length > 0) {
+                const batLane = availableLanes[0];
+                createSuperchargerBattery(batLane, zPos - 14);
+            }
+
+            // Spawn Golden Cube (+1 Life)
+            if (Math.random() < 0.28 && availableLanes.length > 0) {
+                const cubeLane = availableLanes[availableLanes.length - 1];
+                createGoldCube(cubeLane, zPos - 22);
+            }
+        }
+
+        function startGame() {
+            clearEntities();
+            gameState.running = true;
+            gameState.score = 0;
+            gameState.coins = 0;
+            gameState.lives = 5;
+            gameState.isSpinning = false;
+            gameState.spinTimer = 0;
+            gameState.invincibleTimer = 0;
+            gameState.speed = gameState.baseSpeed;
+            gameState.currentLane = 2;
+            gameState.targetX = LANES[2];
+            gameState.isFlying = false;
+            gameState.energy = 100;
+            gameState.flightCooldown = false;
+
+            playerCar.position.set(LANES[2], GROUND_Y, 0);
+            playerCar.rotation.set(0, 0, 0);
+            playerCar.visible = true;
+            flameGroup.visible = false;
+
+            document.getElementById('modal-overlay').classList.add('hidden');
+            hideToast();
+            populateInitialWave();
+            updateHUD();
+            updateFlightUI();
+            sfx.startBGM();
+        }
+
+        function handleCrashSpin() {
+            if (gameState.score > gameState.bestScore) {
+                gameState.bestScore = Math.floor(gameState.score);
+            }
+
+            gameState.lives--;
+            gameState.score = 0; // Reset score to zero upon collision
+            sfx.playCrash();
+            spawnBurstParticles(playerCar.position, 0xff0055, 28);
+            updateHUD();
+
+            if (gameState.lives <= 0) {
+                triggerGameOver();
+                return;
+            }
+
+            // Trigger spin-out in place for 1.3 seconds, then continue playing
+            gameState.isSpinning = true;
+            gameState.spinTimer = 1.3;
+            gameState.invincibleTimer = 2.6;
+            gameState.speed = gameState.baseSpeed;
+            showToast(`💥 發生擦撞！原地打轉且分數歸零 (剩餘 ${gameState.lives} 條命)`);
+            setTimeout(() => {
+                if (!gameState.isFlying && !gameState.isSpinning) hideToast();
+            }, 2200);
+        }
+
+        function triggerGameOver() {
+            gameState.running = false;
+            gameState.isSpinning = false;
+            playerCar.visible = true;
+            sfx.stopBGM();
+            hideToast();
+
+            if (gameState.score > gameState.bestScore) {
+                gameState.bestScore = Math.floor(gameState.score);
+            }
+
+            // Configure Modal for Game Over
+            document.getElementById('modal-icon').classList.remove('hidden');
+            document.getElementById('modal-start-icon').classList.add('hidden');
+            document.getElementById('modal-title').textContent = '5 條生命耗盡：任務中斷';
+            document.getElementById('modal-subtitle').innerHTML = '您的 5 條生命已全部耗盡！收集賽道上的 <span class="text-amber-300 font-bold">金色方塊</span> 可增加生命，或善用 <span class="text-pink-400 font-bold">SpaceX 噴射飛天</span> 跨越塞車。';
+
+            const statsBox = document.getElementById('gameover-stats');
+            statsBox.classList.remove('hidden');
+            statsBox.classList.add('grid');
+
+            document.getElementById('stat-score').textContent = Math.floor(gameState.score);
+            document.getElementById('stat-coins').textContent = gameState.coins;
+            document.getElementById('stat-best').textContent = gameState.bestScore;
+            document.getElementById('btn-start-game').innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i>重新啟動挑戰';
+
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score').textContent = String(Math.floor(gameState.score)).padStart(5, '0');
+            document.getElementById('hud-coins').textContent = gameState.coins;
+            document.getElementById('hud-lives').textContent = gameState.lives;
+            const kmh = gameState.isSpinning ? 0 : Math.floor(110 + (gameState.speed - gameState.baseSpeed) * 3.2 + (gameState.isFlying ? 45 : 0));
+            document.getElementById('hud-speed').textContent = kmh;
+
+            const pct = Math.floor(gameState.energy);
+            document.getElementById('hud-energy-pct').textContent = pct + '%';
+            document.getElementById('hud-energy-bar').style.width = pct + '%';
+        }
+
+        function updateFlightUI() {
+            const statusTag = document.getElementById('flight-status-tag');
+            const flyBtnLabel = document.getElementById('ctrl-fly-label');
+            const flyBtn = document.getElementById('ctrl-fly');
+
+            if (gameState.isSpinning) {
+                statusTag.textContent = '💫 車輛擦撞原地打轉中 (分數已歸零)...';
+                statusTag.className = 'text-[10px] text-center mt-0.5 text-red-400 font-bold tracking-wider';
+                flyBtnLabel.textContent = '打轉恢復中';
+                flyBtn.disabled = true;
+            } else if (gameState.isFlying) {
+                statusTag.textContent = '🚀 噴射飛行中 (無視地面車流 / 再按可降落)';
+                statusTag.className = 'text-[10px] text-center mt-0.5 text-pink-400 font-bold tracking-wider';
+                flyBtnLabel.textContent = '緊急降落';
+                flyBtn.disabled = false;
+            } else if (gameState.energy < 20) {
+                statusTag.textContent = '⚡ 推進器充能中 (需達 20% 才可起飛)';
+                statusTag.className = 'text-[10px] text-center mt-0.5 text-yellow-400 font-semibold tracking-wider';
+                flyBtnLabel.textContent = '充能中...';
+                flyBtn.disabled = true;
             } else {
-                // 產生電池
-                const batGroup = new THREE.Group();
-                const batMat = new THREE.MeshStandardMaterial({ color: 0x10b981 });
-                const batGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2, 16);
-                const bat = new THREE.Mesh(batGeo, batMat);
-                bat.position.y = 1;
-                batGroup.add(bat);
-                batGroup.position.set(lane, 0, zPos);
-                batGroup.type = 'battery';
-                scene.add(batGroup);
-                items.push(batGroup);
+                statusTag.textContent = '狀態：地面行駛 (可隨時噴射起飛)';
+                statusTag.className = 'text-[10px] text-center mt-0.5 text-cyan-300 font-semibold tracking-wider';
+                flyBtnLabel.textContent = '噴射飛天';
+                flyBtn.disabled = false;
             }
         }
 
-        // === 鍵盤控制 ===
-        function onKeyDown(e) {
-            if (!gameActive) return;
-            if (e.code === 'ArrowLeft' && currentLane > 0) {
-                currentLane--;
-                targetX = LANES[currentLane];
-            } else if (e.code === 'ArrowRight' && currentLane < LANES.length - 1) {
-                currentLane++;
-                targetX = LANES[currentLane];
-            } else if (e.code === 'Space') {
-                isFlying = true;
-                if (audioInitialized && flySynth) flySynth.triggerAttack();
+        let spawnTimer = 0;
+
+        function updateGameLogic(dt) {
+            if (!gameState.running) return;
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // Update spin-out and post-crash invincibility timers
+            if (gameState.invincibleTimer > 0) {
+                gameState.invincibleTimer = Math.max(0, gameState.invincibleTimer - dt);
+                playerCar.visible = Math.floor(elapsedTime * 16) % 2 === 0;
+            } else {
+                playerCar.visible = true;
+            }
+
+            if (gameState.isSpinning) {
+                gameState.spinTimer -= dt;
+                if (gameState.spinTimer <= 0) {
+                    gameState.isSpinning = false;
+                    playerCar.rotation.set(0, 0, 0);
+                }
+            }
+
+            // World forward speed pauses while spinning in place
+            if (!gameState.isSpinning) {
+                gameState.speed = Math.min(gameState.maxSpeed, gameState.speed + dt * 0.65);
+            }
+            const currentWorldSpeed = gameState.isSpinning ? 0 : gameState.speed * (gameState.isFlying ? 1.25 : 1.0);
+
+            if (!gameState.isSpinning) {
+                gameState.score += currentWorldSpeed * dt * 0.45;
+                if (gameState.score > gameState.bestScore) {
+                    gameState.bestScore = Math.floor(gameState.score);
+                }
+            }
+
+            // Handle Flight Energy Drain & Regeneration
+            if (gameState.isFlying) {
+                gameState.energy -= gameState.energyDrainRate * dt;
+                if (gameState.energy <= 0) {
+                    gameState.energy = 0;
+                    deactivateFlight();
+                }
+            } else {
+                if (gameState.energy < gameState.maxEnergy) {
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + gameState.energyRegenRate * dt);
+                }
+            }
+            updateFlightUI();
+            updateHUD();
+
+            // Smooth Lateral Lane Switching, Steering Yaw & Spin-Out Animation
+            const prevX = playerCar.position.x;
+            playerCar.position.x = THREE.MathUtils.lerp(playerCar.position.x, gameState.targetX, dt * 11);
+            const deltaX = playerCar.position.x - prevX;
+
+            if (gameState.isSpinning) {
+                // Rapid 360-degree spin in place
+                playerCar.rotation.y += dt * Math.PI * 6.5;
+                playerCar.rotation.z = Math.sin(elapsedTime * 25) * 0.12;
+                playerCar.rotation.x = 0;
+            } else {
+                playerCar.rotation.z = THREE.MathUtils.lerp(playerCar.rotation.z, -deltaX * 0.65, dt * 12);
+                playerCar.rotation.y = THREE.MathUtils.lerp(playerCar.rotation.y, -deltaX * 0.35, dt * 10);
+            }
+
+            // Smooth Vertical Flight Altitude, High-Speed Suspension Vibration & Pitch Angle
+            const suspensionVib = gameState.isFlying
+                ? Math.sin(elapsedTime * 7) * 0.08
+                : Math.sin(elapsedTime * 38) * 0.022;
+            const targetY = (gameState.isFlying ? FLIGHT_ALTITUDE : GROUND_Y) + suspensionVib;
+            const prevY = playerCar.position.y;
+            playerCar.position.y = THREE.MathUtils.lerp(playerCar.position.y, targetY, dt * 7);
+            const deltaY = playerCar.position.y - prevY;
+            if (!gameState.isSpinning) {
+                playerCar.rotation.x = THREE.MathUtils.lerp(playerCar.rotation.x, deltaY * 0.55, dt * 8);
+            }
+
+            // Spin Player Aero Wheels & Front Wheel Steering Angle
+            playerWheels.forEach((wheel, idx) => {
+                wheel.rotation.x -= currentWorldSpeed * dt * 0.7;
+                if (idx < 2) {
+                    wheel.rotation.y = THREE.MathUtils.lerp(wheel.rotation.y, -deltaX * 0.8, dt * 12);
+                }
+            });
+
+            // Extend or retract cyber wings
+            const targetWingOffset = gameState.isFlying ? 1.45 : 0.3;
+            wingLeft.position.x = THREE.MathUtils.lerp(wingLeft.position.x, -targetWingOffset, dt * 8);
+            wingRight.position.x = THREE.MathUtils.lerp(wingRight.position.x, targetWingOffset, dt * 8);
+
+            // Animate Rocket Flame Flicker & Speed Trail Particles
+            if (gameState.isFlying) {
+                flameGroup.scale.z = 0.85 + Math.random() * 0.45;
+            }
+            if (!gameState.isSpinning && Math.random() < 0.45) {
+                const trailPos = new THREE.Vector3(
+                    playerCar.position.x + (Math.random() - 0.5) * 1.6,
+                    playerCar.position.y + 0.35,
+                    playerCar.position.z + 2.3
+                );
+                spawnBurstParticles(trailPos, gameState.isFlying ? 0x38bdf8 : 0xe2e8f0, 1);
+            }
+
+            // Update Ground Shadow Indicator
+            shadowMesh.position.x = playerCar.position.x;
+            const heightFactor = Math.max(0.3, 1 - (playerCar.position.y / 8));
+            shadowMesh.scale.set(heightFactor, heightFactor, 1);
+
+            // Move Road Dashes
+            roadMarkings.forEach(dash => {
+                dash.position.z += currentWorldSpeed * dt;
+                if (dash.position.z > 22) {
+                    dash.position.z -= 270;
+                }
+            });
+
+            // Move Roadside Streetlights, Trees, Bushes & Hills
+            roadsideObjects.forEach(obj => {
+                obj.position.z += currentWorldSpeed * dt;
+                if (obj.position.z > 25) {
+                    obj.position.z -= 275;
+                }
+            });
+
+            // Drift Sky Clouds
+            skyClouds.forEach(cloud => {
+                cloud.position.z += currentWorldSpeed * 0.25 * dt;
+                if (cloud.position.z > 30) {
+                    cloud.position.z -= 270;
+                }
+            });
+
+            // Spawn New Waves of Traffic & Coins
+            spawnTimer += currentWorldSpeed * dt;
+            if (spawnTimer >= 32) {
+                spawnTimer = 0;
+                spawnWaveAtZ(-235);
+            }
+
+            // Update Traffic Cars, Dynamic AI Lane Switching & Check Collisions
+            for (let i = trafficCars.length - 1; i >= 0; i--) {
+                const car = trafficCars[i];
+                const relSpeed = currentWorldSpeed + car.userData.ownSpeed;
+                car.position.z += relSpeed * dt;
+
+                // Subtle suspension bobbing & wheel rotation for traffic cars
+                car.position.y = Math.sin(elapsedTime * 22 + car.userData.phase) * 0.025;
+                car.userData.wheels.forEach(w => {
+                    w.rotation.x -= relSpeed * dt * 0.5;
+                });
+
+                // Dynamic AI Lane Switching with Blinker Signal
+                if (car.userData.targetLane !== car.userData.lane && car.position.z > car.userData.switchTriggerZ) {
+                    const targetX = LANES[car.userData.targetLane];
+                    const prevCarX = car.position.x;
+                    car.position.x = THREE.MathUtils.lerp(car.position.x, targetX, dt * 3.2);
+                    const dx = car.position.x - prevCarX;
+                    car.rotation.z = -dx * 0.45;
+                    car.rotation.y = dx * 0.25;
+
+                    // Blink turn signal indicator
+                    const blinkOn = Math.floor(elapsedTime * 8) % 2 === 0;
+                    if (targetX > prevCarX) car.userData.rightBlinker.visible = blinkOn;
+                    else car.userData.leftBlinker.visible = blinkOn;
+
+                    if (Math.abs(car.position.x - targetX) < 0.08) {
+                        car.userData.leftBlinker.visible = false;
+                        car.userData.rightBlinker.visible = false;
+                        car.rotation.z = 0;
+                        car.rotation.y = 0;
+                    }
+                }
+
+                // Collision Check (Only if player car is low enough and not currently spinning/invincible)
+                if (playerCar.position.y < 1.75 && !gameState.isSpinning && gameState.invincibleTimer <= 0) {
+                    const dz = Math.abs(car.position.z - playerCar.position.z);
+                    const dx = Math.abs(car.position.x - playerCar.position.x);
+                    if (dz < 3.6 && dx < 1.75) {
+                        scene.remove(car);
+                        trafficCars.splice(i, 1);
+                        handleCrashSpin();
+                        if (!gameState.running) return;
+                        continue;
+                    }
+                }
+
+                if (car.position.z > 25 || car.position.z < -290) {
+                    scene.remove(car);
+                    trafficCars.splice(i, 1);
+                }
+            }
+
+            // Update Coins & Check Collection
+            for (let i = coinItems.length - 1; i >= 0; i--) {
+                const coin = coinItems[i];
+                coin.position.z += currentWorldSpeed * dt;
+                coin.rotation.y += dt * 3.5;
+
+                const dx = Math.abs(coin.position.x - playerCar.position.x);
+                const dy = Math.abs(coin.position.y - (playerCar.position.y + 0.8));
+                const dz = Math.abs(coin.position.z - playerCar.position.z);
+
+                // Generous magnet radius for coin pickup
+                if (dx < 1.9 && dz < 2.3 && dy < 2.2) {
+                    gameState.coins++;
+                    gameState.score += 50;
+                    sfx.playCoin();
+                    spawnBurstParticles(coin.position, 0xfacc15, 8);
+                    scene.remove(coin);
+                    coinItems.splice(i, 1);
+                    continue;
+                }
+
+                if (coin.position.z > 20) {
+                    scene.remove(coin);
+                    coinItems.splice(i, 1);
+                }
+            }
+
+            // Update Supercharger Energy Cells
+            for (let i = batteryItems.length - 1; i >= 0; i--) {
+                const bat = batteryItems[i];
+                bat.position.z += currentWorldSpeed * dt;
+                bat.rotation.y += dt * 2.5;
+                bat.rotation.x += dt * 1.5;
+
+                const dx = Math.abs(bat.position.x - playerCar.position.x);
+                const dz = Math.abs(bat.position.z - playerCar.position.z);
+
+                if (dx < 2.0 && dz < 2.4) {
+                    gameState.energy = gameState.maxEnergy;
+                    gameState.score += 100;
+                    sfx.playPowerup();
+                    showToast('⚡ 超級充電完成：噴射燃料 100% 滿載！');
+                    setTimeout(() => {
+                        if (!gameState.isFlying && !gameState.isSpinning) hideToast();
+                    }, 1800);
+                    spawnBurstParticles(bat.position, 0x00f3ff, 14);
+                    scene.remove(bat);
+                    batteryItems.splice(i, 1);
+                    continue;
+                }
+
+                if (bat.position.z > 20) {
+                    scene.remove(bat);
+                    batteryItems.splice(i, 1);
+                }
+            }
+
+            // Update Golden Cubes (+1 Life)
+            for (let i = goldCubeItems.length - 1; i >= 0; i--) {
+                const cube = goldCubeItems[i];
+                cube.position.z += currentWorldSpeed * dt;
+                cube.rotation.x += dt * 2.2;
+                cube.rotation.y += dt * 2.8;
+                cube.position.y = 1.35 + Math.sin(elapsedTime * 5 + i) * 0.25;
+
+                const dx = Math.abs(cube.position.x - playerCar.position.x);
+                const dy = Math.abs(cube.position.y - (playerCar.position.y + 0.8));
+                const dz = Math.abs(cube.position.z - playerCar.position.z);
+
+                if (dx < 2.1 && dz < 2.4 && dy < 3.5) {
+                    gameState.lives++;
+                    gameState.score += 150;
+                    sfx.playLifeUp();
+                    showToast(`🟨 獲得金色方塊：生命 +1 (目前 ${gameState.lives} 條命)！`);
+                    setTimeout(() => {
+                        if (!gameState.isFlying && !gameState.isSpinning) hideToast();
+                    }, 1800);
+                    spawnBurstParticles(cube.position, 0xffd700, 18);
+                    scene.remove(cube);
+                    goldCubeItems.splice(i, 1);
+                    continue;
+                }
+
+                if (cube.position.z > 20) {
+                    scene.remove(cube);
+                    goldCubeItems.splice(i, 1);
+                }
             }
         }
 
-        function onKeyUp(e) {
-            if (e.code === 'Space') {
-                isFlying = false;
-                if (audioInitialized && flySynth) flySynth.triggerRelease();
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.position.addScaledVector(p.userData.vel, dt);
+                p.userData.life -= dt * 2.2;
+                p.material.opacity = Math.max(0, p.userData.life);
+                p.rotation.x += dt * 5;
+                p.rotation.y += dt * 5;
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
             }
+        }
+
+        function updateCamera(dt) {
+            if (!playerCar) return;
+            const followX = playerCar.position.x * 0.45 + Math.sin(camAngleX) * 8;
+            const followY = 5.8 + playerCar.position.y * 0.55 + camAngleY * 6;
+            const followZ = 13.0 + (gameState.isFlying ? 1.5 : 0);
+
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, followX, dt * 6);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, followY, dt * 6);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, followZ, dt * 6);
+
+            camera.lookAt(playerCar.position.x * 0.3, playerCar.position.y * 0.4 + 1.2, -12);
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            const container = document.getElementById('game-wrapper');
+            if (!container || !renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(container.clientWidth, container.clientHeight);
         }
 
-        function updateUI() {
-            scoreDisplay.innerText = score;
-            batteryBar.style.width = `${Math.max(0, batteryLevel)}%`;
-            
-            if (playerCar.position.y > groundLevel + 0.5) {
-                statusText.innerText = "Airborne";
-                statusText.className = "text-sm font-bold text-blue-500 mt-1";
-            } else {
-                statusText.innerText = "Grounded";
-                statusText.className = "text-sm font-bold text-gray-500 mt-1";
-            }
-        }
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
+            const dt = Math.min(clock.getDelta(), 0.1);
 
-        // === 遊戲主迴圈 ===
-        function gameLoop() {
-            requestAnimationFrame(gameLoop);
-
-            if (gameActive) {
-                // 1. 玩家車輛移動與物理
-                // 左右平滑切換
-                playerCar.position.x += (targetX - playerCar.position.x) * 0.15;
-                
-                // 飛行與重力
-                if (isFlying && batteryLevel > 0) {
-                    velocityY += thrust;
-                    batteryLevel -= 0.3; // 消耗電池
-                    playerCar.thrusters.forEach(t => t.visible = true);
-                } else {
-                    velocityY += gravity;
-                    playerCar.thrusters.forEach(t => t.visible = false);
-                }
-                
-                playerCar.position.y += velocityY;
-                
-                // 地面碰撞與最高高度限制
-                if (playerCar.position.y <= groundLevel) {
-                    playerCar.position.y = groundLevel;
-                    velocityY = 0;
-                } else if (playerCar.position.y > 6) {
-                    playerCar.position.y = 6;
-                    velocityY = 0;
-                }
-
-                // 2. 撞車打轉與無敵閃爍邏輯
-                if (isSpinning) {
-                    spinAngle += 0.2;
-                    playerCar.rotation.y = spinAngle;
-                    if (spinAngle >= Math.PI * 4) { // 打轉兩圈 (720度)
-                        isSpinning = false;
-                        playerCar.rotation.y = 0;
-                    }
-                }
-
-                if (invincibleTime > 0) {
-                    invincibleTime--;
-                    // 閃爍效果
-                    playerCar.visible = (Math.floor(Date.now() / 100) % 2 === 0);
-                } else {
-                    playerCar.visible = true;
-                }
-
-                // 3. 環境移動
-                roadLines.forEach(line => {
-                    line.position.z += speed;
-                    if (line.position.z > 10) line.position.z = -290;
-                });
-
-                trees.forEach(tree => {
-                    tree.position.z += speed;
-                    if (tree.position.z > 10) tree.position.z = -215;
-                });
-
-                // 4. 生成與更新障礙物/道具
-                if (Math.random() < 0.02) spawnObject();
-
-                // 更新障礙物 (車輛)
-                for (let i = obstacles.length - 1; i >= 0; i--) {
-                    const obs = obstacles[i];
-                    obs.position.z += speed * 0.6; // 障礙車也往前開(相對較慢)
-                    
-                    // 碰撞偵測 (未在無敵或打轉狀態下)
-                    if (!isSpinning && invincibleTime <= 0) {
-                        const distZ = Math.abs(obs.position.z - playerCar.position.z);
-                        const distX = Math.abs(obs.position.x - playerCar.position.x);
-                        const distY = Math.abs(obs.position.y - playerCar.position.y);
-                        
-                        if (distZ < 3.5 && distX < 1.5 && distY < 1.0) {
-                            // 觸發撞車
-                            if(audioInitialized && crashSynth) crashSynth.triggerAttackRelease("C2", "8n");
-                            isSpinning = true;
-                            spinAngle = 0;
-                            invincibleTime = 120; // 約 2 秒無敵時間
-                            if(audioInitialized && flySynth) flySynth.triggerRelease();
-                            isFlying = false;
-                        }
-                    }
-
-                    if (obs.position.z > 10) {
-                        scene.remove(obs);
-                        obstacles.splice(i, 1);
-                        score += 10; // 成功躲避加分
-                    }
-                }
-
-                // 更新道具 (金幣/電池)
-                for (let i = items.length - 1; i >= 0; i--) {
-                    const item = items[i];
-                    item.position.z += speed;
-                    
-                    // 旋轉動畫
-                    item.children[0].rotation.y += 0.05;
-                    if (item.type === 'coin') item.children[0].rotation.z += 0.05;
-
-                    // 吃道具偵測
-                    const distZ = Math.abs(item.position.z - playerCar.position.z);
-                    const distX = Math.abs(item.position.x - playerCar.position.x);
-                    const distY = Math.abs(item.position.y - playerCar.position.y);
-                    
-                    if (distZ < 2 && distX < 1.5 && distY < 1.5) {
-                        if (item.type === 'coin') {
-                            score += 50;
-                            if(audioInitialized && coinSynth) coinSynth.triggerAttackRelease(["C5", "E5", "G5"], "16n");
-                        } else if (item.type === 'battery') {
-                            batteryLevel = Math.min(maxBattery, batteryLevel + 30);
-                            if(audioInitialized && batterySynth) batterySynth.triggerAttackRelease("C4", "8n");
-                        }
-                        scene.remove(item);
-                        items.splice(i, 1);
-                        continue;
-                    }
-
-                    if (item.position.z > 10) {
-                        scene.remove(item);
-                        items.splice(i, 1);
-                    }
-                }
-
-                // 逐漸增加難度
-                speed = Math.min(1.5, speed + 0.0001);
-                
-                updateUI();
-            }
+            updateGameLogic(dt);
+            updateParticles(dt);
+            updateCamera(dt);
 
             renderer.render(scene, camera);
         }
 
-        // 啟動初始化
-        window.onload = init;
-
+        window.onload = function () {
+            initThreeScene();
+            animateLoop();
+        };
     </script>
 </body>
 </html>
